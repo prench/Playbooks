@@ -1,0 +1,36 @@
+---
+- name: Configure sshd
+  hosts: aixsse
+  tasks:
+
+  - name: Copy sshd config file template
+    template:
+      src: /repo/sshd/sshd_config_aix.j2
+      dest: /etc/ssh/sshd_config
+      owner: root
+      group: system
+      mode: 0644
+      backup: yes
+    notify:
+       - stop sshd
+       - start sshd
+
+  - name: Copy ssh config file template
+    template:
+      src: /repo/sshd/ssh_config_aix.j2
+      dest: /etc/ssh/ssh_config
+      owner: root
+      group: system
+      mode: 0644
+      backup: yes
+
+  handlers:
+  - name: stop sshd
+    service:
+      name: sshd
+      state: stopped
+
+  - name: start sshd
+    service:
+      name: sshd
+      state: started

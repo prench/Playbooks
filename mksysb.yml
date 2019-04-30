@@ -1,0 +1,32 @@
+---
+- name: Create backup
+  hosts: qualys
+  vars:
+    date: "{{ lookup('pipe', 'date +%Y%m%d') }}"
+  tasks:
+
+   - name: Mount NFS filesystem
+     aix_filesystem:
+       filesystem: /mnt
+       nfs_server: unxshr
+       device: /Store/ansible/mksysb
+       state: mounted
+
+   - name: Run mksysb on "{{ ansible_hostname }}"
+     mksysb:
+       name: "{{ ansible_hostname }}.{{ date }}.mksysb"
+       storage_path: /mnt
+       exclude_files: yes
+       exclude_wpar_files: yes
+
+   - name: Compress mksysb file
+     archive:
+       path: "/mnt/{{ ansible_hostname }}.{{ date }}.mksysb"
+       remove: yes
+
+   - name: Umount NFS filesystem
+     aix_filesystem:
+       filesystem: /mnt
+       nfs_server: unxshr
+       device: /Store/ansible/mksysb
+       state: unmounted

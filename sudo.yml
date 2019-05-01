@@ -1,0 +1,61 @@
+---
+- name: Install and Configure sudoers file for AIX servers
+  hosts: all
+  tasks:
+
+    - name: Copy sudo software
+      copy:
+       src: /repo/sudo/software/sudo-1.8.20-3.aix53.rpm
+       dest: /tmp/sudo-1.8.20-3.aix53.rpm
+
+    - name: Install rpm package
+      shell:
+       rpm -Uh --force /tmp/sudo-1.8.20-3.aix53.rpm
+      changed_when: False
+
+
+# This play tries to gather all the misc granted in sudoers file which
+# are not on the template and put it under /etc/sudoers.d/special
+# If there are new entries added on the general template, they will have to be added underneath
+# change
+
+    - name: Standardize sudoers file
+      shell: |
+       cat /etc/sudoers | grep -v Defaults |
+       grep -v root[[:space:]]ALL |
+       grep -iv CCS |
+       grep -iv QUALYS |
+       grep -v snow |
+       grep -v "SU=/bin/su"$ |
+       # remove blank lines
+       grep -v -e '^$' |
+       grep -v ^#
+      register: misc
+      changed_when: "misc.rc == 0"
+      failed_when: "misc.rc == 2"
+
+
+    - name: Create miscellaneous file
+      lineinfile:
+       dest: /etc/sudoers.d/misc
+       line: "{{ item }}"
+       mode: 0440
+       backup: yes
+       create: yes
+      with_items: "{{ misc.stdout_lines }}"
+
+    - name: Copy sudoers file general template
+      copy:
+       src: /repo/sudo/templates/aix/sudoers
+       dest: /etc/sudoers
+       mode: 0440
+       validate: /usr/sbin/visudo -cf %s
+       backup: yes
+
+    - name: Copy qualys sudoers
+      copy:
+       src: /repo/sudo/templates/qualys
+       dest: /etc/sudoers.d
+       mode: 0440
+       validate: /usr/sbin/visudo -cf %s
+       backup: yes

@@ -1,0 +1,16 @@
+---
+- hosts: all
+  tasks:
+
+   - name: Find files older than 7 days
+     find:
+      paths: /etc/security
+      patterns: 'login*~,user*~'
+      age: 7d
+     register: hkfiles
+
+   - name: Delete files older than 7 days
+     file:
+      path: "{{ item.path }}"
+      state: absent
+     loop: "{{ hkfiles.files }}"

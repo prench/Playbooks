@@ -1,0 +1,55 @@
+---
+ - name: Find files
+   hosts: aixsse
+
+   pre_tasks:
+     - name: make sure mandatory values are present
+       fail:
+        msg: "Check Size and Directory are defined using -e to set them as additional variables. 
+             E.g. ansible-playbook findfiles.yml -e Directory=/var/log -e size=+1000000c "
+       when: Directory is not defined or size is not defined 
+  
+   tasks:
+
+
+# Case1:  when SearchString and Modified time and Size is mentioned
+     - name:  Find files sorted by time/size/name 
+       shell: "find {{Directory}} -name '{{SearchString}}' -mtime '{{mtime}}' -size '{{size}}'"
+       register: case1output
+       when: Directory is defined and SearchString is defined and mtime is defined and size is defined
+       ignore_errors: true
+
+# Case2: when Size and Modified Time are mentioned but NOT SearchString 
+     - name:  Find files sorted by time/size 
+       shell: "find {{Directory}} -mtime '{{mtime}}' -size '{{size}}'"
+       register: case2output
+       when: Directory is defined and size is defined and mtime is defined and SearchString is not defined
+       ignore_errors: true
+
+# Case3: when Size is mentioned but NOT Modified Time and SearchString
+
+     - name:  Find files sorted by size
+       shell: "find {{Directory}} -size '{{size}}'"
+       register: case3output
+       when: Directory is defined and size is defined and mtime is not defined and SearchString is not defined
+       ignore_errors: true
+
+
+# In case of Case1 Success
+     - name: Case1 -- time/size/name defined 
+       debug: 
+         var: case1output.stdout_lines
+       when: case1output.stdout_lines is defined
+
+# In case of Case2 Success
+     - name: Case2 -- time/size defined
+       debug: 
+         var: case2output.stdout_lines
+       when: case2output.stdout_lines is defined
+
+# In case of Case3 Success
+     - name: Case3 -- size defined
+       debug:
+         var: case3output.stdout_lines
+       when: case3output.stdout_lines is defined
+ 

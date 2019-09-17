@@ -1,0 +1,29 @@
+---
+- name: Harden TCP/IP parameters 
+  hosts: havut226
+  vars_files:
+     - /etc/ansible/vars/hardening_vars.yml
+  tasks:
+
+   - name: Check tcp/ip parameters - nfs
+     shell: nfso -x {{ item.setting }} | awk -F, '{print $2}' | grep {{ item.value }}
+     register: nfsoutput
+     loop: "{{ nfso }}"
+     changed_when: false
+     ignore_errors: yes
+
+
+   - name: Harden tcp/ip parameters - nfs
+     command: "nfso -p -o {{ item.item.setting }}={{item.item.value}}"
+     loop: "{{ nfsoutput.results }}" 
+     when: "item.rc != 0"
+     loop_control:
+       label: "{{ item.item.setting }}"
+
+
+   - debug: 
+       var: nfsoutput
+
+
+   - debug:
+       msg: " estas son las vars {{ nfsoutput }}"

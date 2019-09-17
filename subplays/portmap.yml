@@ -1,0 +1,20 @@
+---
+- name: Secure portmap services
+  hosts: aixsse
+  tasks: 
+
+    - name: Check nfsd services
+      shell: lssrc -s nfsd | grep inoperative
+      register: nfsd
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Check portmap services
+      shell: grep "^start /usr/sbin/portmap" /etc/rc.tcpip 
+      register: portmap
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Disable portmap when nfsd is not active
+      command: chrctcp -d portmap
+      when: portmap.rc == 0 and nfsd.rc == 0  

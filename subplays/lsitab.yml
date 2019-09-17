@@ -1,0 +1,24 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: aixsse
+  tasks:
+
+
+  - name: check service
+    command: lsitab "{{ item }}"
+    loop: 
+      - writesrv
+      - mum
+      - i4ls
+    register: lsitaboutput
+    ignore_errors: yes
+    
+
+  - debug: 
+      var: lsitaboutput
+
+  - name: Disable service
+    command: rmitab {{ item.item }}
+    loop: "{{ lsitaboutput.results }}"
+    when: "item.rc == 0"
+  

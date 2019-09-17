@@ -1,0 +1,17 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: aixsse
+  vars:
+    id:
+     - usr: root
+     - usr: oracle
+  tasks:
+
+   - name: Remove daemons from inittab
+     command: rmitab "{{ item }}"
+     ignore_errors: yes
+     loop:
+       - qdaemon
+       - lpd
+       - piobe
+       - dt

@@ -1,0 +1,19 @@
+---
+- hosts: aixsse
+  vars:
+    id:
+     - usr: root
+     - usr: oracle
+     - usr: oper
+  tasks:
+
+    - name: Check user exists
+      command: lsuser "{{ item.usr }}"
+      register: usr_id
+      loop: "{{ id }}"
+      ignore_errors: yes
+  
+    - name: Change attribs
+      command: chuser maxage=8 {{ item.item.usr }}
+      loop: "{{ usr_id.results }}"
+      when: "item.rc == 0"

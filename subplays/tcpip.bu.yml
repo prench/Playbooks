@@ -1,0 +1,27 @@
+---
+- name: Harden tcp/ip
+  hosts: havut226
+  vars:
+    tcpip:
+    - setting: ipsrcrouteforward
+      value: 0
+    - setting: bcastping
+      value: 0
+  tasks:
+
+     - name: Check TCP/IP parameters
+       shell: no -x {{ item.setting }} | awk -F, '{print $2}' | grep {{ item.value }}
+       register: noutput
+       loop: "{{ tcpip }}"
+       changed_when: false
+       ignore_errors: yes
+
+     - name: Harden TCP/IP parameters
+       command: "no -p -o {{ item.item.setting }}={{ item.item.value }}"
+       loop: "{{ noutput.results }}"
+       when: "item.rc != 0"
+       loop_control:
+          label: "{{ item.item.setting }}"
+
+     - debug: 
+         var: noutput

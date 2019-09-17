@@ -1,0 +1,21 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: aixsse
+  tasks:
+
+   - name: Check core dumps
+     command: lssec -f /etc/security/limits -s default -a core -a core_hard
+     register: core
+
+   - name: Disable core dumps
+     command: chsec -f /etc/security/limits -s default -a core=0 -a core_hard=0
+     when: "core.stdout != 'default core=0 core_hard=0'"     
+
+
+   - name: Check full core
+     command: lsattr -El sys0 -a fullcore
+     register: full
+
+   - name: Disable full core
+     command: chdev -l sys0 -a fullcore=false
+     when: "full.stdout != 'fullcore false Enable full CORE dump True'"

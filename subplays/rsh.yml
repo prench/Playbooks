@@ -1,0 +1,18 @@
+---
+- hosts: havut226
+  tasks:
+
+  - name: Chek rsh permissions
+    shell: ls -ld /usr/bin/rsh | awk '{print $1}' | grep -E 'r|w|x'
+    register: rshoutput
+    ignore_errors: yes
+    changed_when: false
+
+  - debug:
+      var: rshoutput
+
+  - name: Disable rsh - mode ugo-rwx
+    command: chmod ugo= /usr/bin/rsh
+    args:
+       warn: no
+    when: "rshoutput.rc == 0"

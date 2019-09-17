@@ -1,0 +1,17 @@
+---
+- name: Send email
+  hosts: aixsse
+  tasks:
+
+   - name: Register the variable
+     command: df -g
+     register: df
+
+
+   - mail:
+      host: localhost
+      port: 25
+      body: "{{ df.stdout }}"
+      to: Alberto Preciados <alberto.preciados@sse.com>
+      subject: Ansible-report
+     delegate_to: localhost

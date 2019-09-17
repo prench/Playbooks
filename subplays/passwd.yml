@@ -1,0 +1,88 @@
+---
+- hosts: aixsse
+  vars: 
+    id:
+     - usr: root
+     - usr: oracle
+  tasks:
+   
+# Attribs to code:
+# maxage
+# minlen 
+#
+   - name: Set passwd attribs
+     replace:
+       path: /etc/security/user
+       regexp: "{{ item.regexp }}"
+       replace: "{{ item.line }}"
+       backup: yes
+     loop: 
+        - { regexp: '(\tmindiff = )[0-3]', line: '\g<1>4' }
+        - { regexp: '(\tmaxexpired = )-1', line: '\g<1>2' }
+        - { regexp: '(\tminloweralpha = )0', line: '\g<1>1' }
+        - { regexp: '(\tminupperalpha = )0', line: '\g<1>1' } 
+        - { regexp: '(\tmindigit = )0', line: '\g<1>1' }
+        - { regexp: '(\tminspecialchar = )0', line: '\g<1>1' }
+        - { regexp: '(\tminage = )0', line: '\g<1>1' }
+        - { regexp: '(\tminalpha = )[0-1]', line: '\g<1>2' }
+        - { regexp: '(\tminother = )[0-1]', line: '\g<1>2' }
+        - { regexp: '(\tmaxrepeats = ).*$', line: '\g<1>2' }
+        - { regexp: '(\thistexpire = )(.*)$', line: '\g<1>13' }
+        - { regexp: '(\thistsize = )(.*)$', line: '\g<1>20' }
+        - { regexp: '(\tloginretries = )(.*)$', line: '\g<1>3' }
+        - { regexp: '(\tmaxage = )(.*)$', line: '\g<1>12' }
+        - { regexp: '(\tminlen = )(.*)$', line: '\g<1>12' }
+
+
+   - name: Check if admin accounts exist 
+     command: lsuser "{{ item.usr }}"
+     register: lsusr
+     loop: "{{ id }}"
+     ignore_errors: yes
+
+   - name: Set passwd attribs for admin accounts - maxage
+     command: chuser maxage=8 {{ item.item.usr }}
+     loop: "{{ lsusr.results }}"
+     when: "item.rc == 0"
+
+   - name: Set passwd attribs for admin accounts - minlen
+     command: chuser minlen=15 {{ item.item.usr }}
+     loop: "{{ lsusr.results }}"
+     when: "item.rc == 0"
+
+   - name: Set login attribs
+     lineinfile:
+       path: /etc/security/login.cfg
+       regexp: "{{ item.regexp }}"
+       line: "{{ item.line }}"
+       backrefs: yes
+       backup: yes
+     loop:
+        - { regexp: '(\tlogininterval = )(.*)$', line: '\g<1>300' }
+        - { regexp: '(\tlogindisable = )(.*)$', line: '\g<1>10' }
+        - { regexp: '(\tloginreenable =)(.*)$', line: '\g<1>360' }
+        - { regexp: '(\tlogintimeout = )(.*)$', line: '\g<1>30' }
+        - { regexp: '(\tlogindelay = )(.*)$', line: '\g<1>10' }
+        - { regexp: '(\therald = ).*$', line: '\g<1>"SSE Authorised Access Only!\\n\\nLogin:"' }
+
+   - name: Set encryption algorithm - ssha256
+     lineinfile:
+       path: /etc/security/login.cfg
+       regexp: '(\tpwd_algorithm = )(.*)$'
+       line: '\g<1>ssha256'
+       backrefs: yes
+       backup: yes
+
+   - name: Find files older than 30 days
+     find:
+      paths: /etc/security
+      patterns: 'login*~,user*~'
+      age: 30d
+     register: hkfiles
+
+   - name: Delete files older than 30 days
+     file:
+      path: "{{ item.path }}"
+      state: absent
+     loop: "{{ hkfiles.files }}"
+

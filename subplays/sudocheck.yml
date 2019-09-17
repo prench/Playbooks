@@ -1,0 +1,11 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: vhali100
+  tasks:
+
+   - name: Check sudoers
+     command: grep -i 'command not allowed' /var/adm/sudo.log
+     register: notallowed
+
+   - debug:
+       msg: "Lines reporting {{ notallowed.stdout_lines }}"

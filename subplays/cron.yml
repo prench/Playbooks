@@ -1,0 +1,11 @@
+---
+- name: Configure cron
+  hosts: localhost 
+  tasks:
+
+   - name: configure cron	
+     cron:
+      name: "qualys update"
+      minute: 44 
+      hour: 08
+      job: /etc/ansible/playbooks/qualys_update.yml

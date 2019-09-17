@@ -1,0 +1,8 @@
+---
+- name: Configure syslog.conf
+  hosts: aixsse
+  tasks:
+
+
+   - name: Add lines
+     lineinfile

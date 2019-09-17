@@ -1,0 +1,14 @@
+---
+- name: Enable service
+  hosts: excpnlist 
+  tasks:
+
+
+   - name: Enabling tfp
+     lineinfile:
+      path: /etc/inetd.conf
+      regexp: '^#(\s*{{ service }}.*)$'
+      line: '\g<1>'
+      backrefs: yes
+
+

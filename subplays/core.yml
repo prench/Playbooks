@@ -1,0 +1,36 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: aixsse
+  tasks:
+
+   - name: Disable core dumps
+     command: chsec -f /etc/security/limits -s default -a core=0 -a core_hard=0
+     args:
+      creates: /var/ansdisblcore
+     register: core
+
+   - name: Set core flag
+     file:
+      path: /var/ansdisblcore
+      state: touch
+     when: "core.rc == 0"
+ 
+   - debug:
+       var: core
+
+   - name: Disable full core
+     command: chdev -l sys0 -a fullcore=false
+     args:
+      creates: /var/ansdisblfull
+     register: full
+
+   - name: Set full core flag
+     file:
+      path: /var/ansdisblfull
+      state: touch
+     when: "full.rc == 0" 
+
+
+
+
+

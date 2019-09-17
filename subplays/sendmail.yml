@@ -1,0 +1,31 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: aixsse
+  vars:
+    id:
+     - usr: root
+     - usr: oracle
+  tasks:
+
+   - name: Configure sendmail greeting
+     lineinfile: 
+       path: /etc/mail/sendmail.cf
+       regexp: '^(O\sSmtpGreetingMessage\=)\$j\sSendmail\s\$b'
+       line: '\g<1>mailerready'
+       backup: yes
+       backrefs: yes
+  
+   - name: Secure /etc/mail/sendmail.cf - mode 640
+     file:
+      path: /etc/mail/sendmail.cf
+      owner: root
+      group: system
+      mode: '0640'
+
+   - name: Secure /var/spool/mqueue - mode 700 
+     file:
+      path: /var/spool/mqueue
+      owner: root
+      group: system
+      mode: '0700'
+

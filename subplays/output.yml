@@ -1,0 +1,20 @@
+---
+- name: Clear log
+  hosts: aixsse
+  tasks:
+
+   - name: Search .profile files
+     find:
+      paths: '/'
+      patterns: '*.profile'
+      recurse: yes
+      hidden: yes
+     register: profileout
+
+   - name: Set root as .profile files owner
+     file:
+      path: "{{ item.path }}"
+      owner: root
+     loop: "{{ profileout.files }}"
+     loop_control: 
+       label: "{{ item.path }}"

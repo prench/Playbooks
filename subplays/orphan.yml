@@ -1,0 +1,24 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: aixsse
+  tasks:
+
+   - name: Find orphaned files/directories
+     shell: find / \( -type d -o -type f \) \( -nouser -o -nogroup \) -ls | awk '{print $11}'
+     ignore_errors: yes
+     register: orphan
+
+   - name: Assign root:system to orphaned files/directories
+     file:
+      path: "{{ item }}"
+      owner: root
+      group: system 
+     loop: "{{ orphan.stdout_lines }}"
+
+   - debug:
+       var: orphan
+
+
+
+
+

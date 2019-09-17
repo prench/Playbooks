@@ -1,0 +1,8 @@
+---
+- name: Play to fiddle with
+  hosts: havut226
+  tasks:
+
+
+   - debug:
+       msg: "{{ 'special comment' | comment(decoration='!') }}"

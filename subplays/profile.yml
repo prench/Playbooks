@@ -1,0 +1,25 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: aixsse
+  tasks:
+
+   - name: Secure /etc/profile - disable coredumps & talk/write commands
+     lineinfile:
+      path: /etc/profile
+      regexp: '^mesg n(\s.*)$'
+      line: 'mesg n' 
+      backup: yes
+
+
+   - name: path directory
+     shell: find $(echo $PATH | tr ':' ' ') -prune -type d \( -perm -002 -o -perm -020 \) 
+     register: pathdir
+
+   - name: change permissions
+     file:
+      path: "{{ item }}"
+      mode: 'go-w'
+     loop: "{{ pathdir.stdout_lines }}"
+
+   - debug: 
+       var: pathdir

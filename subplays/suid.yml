@@ -1,0 +1,26 @@
+---
+- name: Suid files
+  hosts: aixsse
+  tasks:
+  
+
+   - name: Copy the list of allowed suid files
+     template:
+       src: /repo/suid/suid_perm_v1
+       dest: /ansible/suid_perm_v1
+       owner: root
+
+   - name: List suid files on the server
+     shell: find / -perm -04000 -type f -ls | awk '{print $11}' > /ansible/suid_files
+
+  
+   - name: Compare allowed and listed suid files  
+     shell: grep -vf /ansible/suid_perm_v1 /ansible/suid_files | grep -v ^#
+     register: suid
+
+   - name: Remove suid from files
+     file:
+      path: "{{ item }}"
+      mode: u-s
+     loop: "{{ suid.stdout_lines }}"
+     ignore_errors: yes

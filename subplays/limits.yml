@@ -1,0 +1,8 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: aixsse
+  tasks:
+
+   - name:  Disable core dumps
+     command: chsec -f /etc/security/limits -s default -a core=0 -a core_hard=0
+     

@@ -1,0 +1,5 @@
+---
+sshuser:
+ - usrkey: oracle
+ - usrkey: olmuat
+ - usrkey: seocrsit

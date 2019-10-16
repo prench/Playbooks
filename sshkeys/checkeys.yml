@@ -1,0 +1,15 @@
+---
+- name: Check ssh keys
+  hosts: aixsse
+  gather_facts: false
+  tasks:
+
+   - name: Check if dsa key exists for luaopebs
+     shell: "grep ssh-dss.*luaopebs /etc/ssh_keys/*/authorized_keys | awk -F: '{print $1}'"
+     register: sshkey
+     changed_when: "sshkey.rc == 0"
+     ignore_errors: yes
+
+
+   - debug:
+       var: sshkey.stdout_lines

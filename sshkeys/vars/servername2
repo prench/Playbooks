@@ -1,0 +1,6 @@
+---
+sshuser:
+ - usrkey: metron
+ - usrkey: qualys
+service: telnet
+usrmage: root

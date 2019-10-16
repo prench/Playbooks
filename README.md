@@ -23,6 +23,6 @@ List of  AIX playbooks
   
   There is a template stored on the ansible server that is copied over the clients
   
-  * ssh folder
+ * ssh folder
   
   Different playbooks to find for a specific key configured on different users, add a new key and remove the old key

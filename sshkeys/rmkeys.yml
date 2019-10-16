@@ -1,0 +1,12 @@
+---
+- name:  Reorganize ssh keys - luaopcor
+  hosts: havut440
+  gather_facts: false
+  tasks:
+
+   - name: Remove luaopebs key
+     lineinfile:
+      dest: "/etc/ssh_keys/{{item.usrkey}}/authorized_keys"
+      regexp: '^ssh-dss.*luaopebs@ssvui300'
+      state: absent
+     loop: "{{ sshuser }}"

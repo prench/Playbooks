@@ -1,0 +1,21 @@
+---
+- name: Distribute luaopcor key
+  hosts: corporate
+  gather_facts: true
+  tasks:
+
+   - name: Take a backup of authorized_keys
+     copy:
+      src: "/etc/ssh_keys/{{item.usrkey}}/authorized_keys"
+      dest: "/etc/ssh_keys/{{item.usrkey}}/authorized_keys.{{ansible_date_time.date}}"
+      remote_src: yes
+     loop: "{{ sshuser }}"
+
+   - name: Add rsa key for luaopcor into authorized keys
+     authorized_key:
+      user: "{{ item.usrkey }}"
+      state: present
+      exclusive: no
+      key: "{{ lookup('file', '/repo/sshd/luaopcor/.ssh/id_rsa.pub') }}"
+      path: "/etc/ssh_keys/{{item.usrkey}}/authorized_keys"
+     loop: "{{ sshuser }}"

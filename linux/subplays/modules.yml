@@ -1,0 +1,14 @@
+---
+- name: Disable modules
+  hosts: lnxsse
+  gather_facts: false
+  tasks:
+
+   - name: Copy template with CIS configurations
+     template:
+      src: /repo/templates/CIS.j2
+      dest: /etc/modprobe.d/CIS.conf
+      owner: root
+      group: root
+      mode: '0644'
+

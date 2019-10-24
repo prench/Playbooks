@@ -1,0 +1,58 @@
+---
+- name: Install CCS Agent on Linux hosts  
+  hosts: lnxsse
+  tasks:
+
+  - name: Install packages needed by CCS agent
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+        - pam-devel.i686
+        - libgcc.i686
+        - glibc.i686
+        - nss-softokn-freebl.i686
+        - cracklib.i686
+        - libstdc++.i686
+        - libselinux.i686
+        - audit-libs.i686
+        - pcre.i686
+        - xz-libs.i686
+        - zlib.i686
+
+  - name: Create symantec lvol
+    lvol: 
+      vg: rootvg
+      lv: symanteclv
+      size: 1024M
+
+  - name: Create fylesystem
+    filesystem:
+      fstype: ext4
+      dev: /dev/rootvg/symanteclv
+
+  - name:  Add fs info into fstab
+    mount:
+       path: /opt/symantec/esm
+       src: /dev/rootvg/symanteclv
+       fstype: ext4
+       state: mounted
+       
+  - name: Copy CCS Agent software 
+    copy: 
+     src: "{{ item }}"
+     dest: /tmp
+     owner: root
+     group: root
+     mode: 0750
+    with_items:  
+            - /repo/ccs/x64/esm120/esmsetup
+            - /repo/ccs/x64/esm120/esm.tgz
+            - /repo/ccs/x64/esm120/su/ccs.tpk
+
+  - name: Run the installation
+    command: | 
+     ./esmsetup -ibaE -p 1,2,3,4,5,6,7,8,9,10,11,12,13,14 -d /opt/symantec/esm -u root -g root -t /tmp/esm.tgz -M 10.4.77.63 -O 5600 -N $(hostname) -C /tmp/su/ccs.tpk 
+    args: 
+     chdir: /tmp
+     creates: /esm/bin/lnx-x64/esmd

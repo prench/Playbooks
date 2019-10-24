@@ -1,0 +1,38 @@
+---
+- name: Enable services
+  hosts: lnxsse
+  gather_facts: false
+  tasks:
+
+   - name: Enable and start cron
+     service: 
+       name: crond
+       state: started
+       enabled: yes 
+
+   - name: Disable services 
+     service: 
+       name: "{{item}}"
+       state: stopped
+       enabled: no
+     loop:
+        - xinetd
+        - avahi-daemon
+        - cups
+        - dhcpd
+        - slapd
+        - vsftpd
+        - named
+        - dovecot
+        - smb
+        - squid
+        - snmpd
+        - ypserv
+        - rsh.socket
+        - rlogin.socket
+        - rexec.socket
+        - ntalk
+        - telnet.socket
+        - tftp.socket
+        - rsyncd
+        - ypbind

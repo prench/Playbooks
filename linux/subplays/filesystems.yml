@@ -1,0 +1,59 @@
+---
+- name: Configure filesystems
+  hosts: lnxsse
+  tasks:
+
+   - name: Create lvol 
+     lvol:
+      vg: rootvg
+      lv: "{{item.name}}"
+      size: "{{item.space}}" 
+      force: no
+     loop: 
+       - { name: 'tmplv', space: '2G' }
+       - { name: 'varlv', space: '4G' }
+       - { name: 'varloglv', space: '512M' }
+       - { name: 'varauditlv', space: '512M' }
+       - { name: 'homelv', space: '512M' }
+     ignore_errors: yes
+   
+   - name: Create fylesystem 
+     filesystem:
+      fstype: ext4
+      dev: "{{item}}"
+     loop: 
+       - /dev/rootvg/varloglv
+       - /dev/rootvg/homelv
+       - /dev/rootvg/varlv
+       - /dev/rootvg/varauditlv
+       - /dev/rootvg/tmplv
+
+   - name: Configure filesystem options /tmp
+     mount:
+       path: /tmp
+       src: /dev/mapper/rootvg-tmplv
+       opts: rw,nosuid,nodev,relatime,seclabel,data=ordered
+       dump: '1'
+       passno: '2'
+       fstype: ext4
+       state: present
+
+   - name: Configure filesystem options /home
+     mount:
+       path: /home
+       src: /dev/mapper/rootvg-homelv
+       opts: nodev
+       dump: '1'
+       passno: '2'
+       fstype: ext4
+       state: present
+
+   - name: Configure filesystem options /dev/shm
+     mount:
+       path: /dev/shm
+       src: tmpfs
+       opts: defaults,nosuid,nodev,noexec
+       fstype: tmpfs
+       state: present
+
+ 

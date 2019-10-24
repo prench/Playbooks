@@ -1,0 +1,14 @@
+---
+- name: Configure ntp 
+  hosts: lnxsse
+  tasks:
+
+    - name: Copy ntp config file template
+      template:
+       src: /repo/ntp/linux/ntp_config_aix.j2
+       dest: /etc/ntp.conf
+       owner: root
+       group: root
+       mode: 0644
+       backup: yes
+

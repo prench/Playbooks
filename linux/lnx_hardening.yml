@@ -1,0 +1,464 @@
+---
+- name: Security hardening based on Midrange Unix Systems Security Standards
+  hosts: lnxsse
+  gather_facts: false
+  vars_files:
+   - /etc/ansible/vars/usr_vars.yml
+   - /etc/ansible/vars/hardening_vars.yml
+
+# Pretasks (create ansible directory) were added because when the gpm role is added to the playbook,
+# the folder /ansible and the list of filesystems need to be present in the server before the role runs.
+
+  pre_tasks: 
+   - name: Create ansible directory
+     file:
+      path: /ansible
+      state: directory
+      mode: '0750'
+
+   - name: Build the list of filesystems
+     shell: mount | grep -v nfs | grep -v vxodm | grep -v procfs | awk '{print $2}' | tail +3 > /ansible/loffs
+     args:
+      warn: false
+  roles:
+   - hk
+  tasks:
+  
+   - name: Setup Standard SSE motd
+     template:
+      src: /repo/templates/motd.j2
+      dest: /etc/motd
+      owner: bin
+      group: bin
+      mode: 0644
+
+
+   - name: Secure and Restrict at.allow & cron.allow to metron and root
+     blockinfile:
+      path: "{{ item }}"
+      block: |
+        root
+        metron
+      create: yes
+      owner: root
+      group: sys
+      mode: 0400
+     loop:
+        - /var/adm/cron/cron.allow
+        - /var/adm/cron/at.allow 
+
+
+   - name: Secure /etc/motd - mode bin.bin 0644
+     file:
+      path: /etc/motd
+      owner: bin
+      group: bin
+      mode: 0644
+
+
+   - name: Secure /var/adm/ras - mode o-rw
+     file:
+      path: /var/adm/ras
+      recurse: yes
+      mode: "o-rw"
+
+
+   - name: Secure files under /var directory - mode o-rw
+     file:
+      path: "{{ item }}"
+      mode: "o-rw" 
+      state: absent
+     loop:
+       - /var/ct/RMstart.log
+       - /var/tmp/dpid2.log
+       - /var/tmp/hostmibd.log
+       - /var/tmp/snmpd.log
+       - /var/adm/cron.log
+       - /smit.log
+
+              
+   - name: Find users home folder
+     shell: lsuser -a home ALL |cut -f2 -d = | grep -Ev '/$|/etc$|/var$|/opt$|/tmp$|/bin$|/var/adm$|/usr/tws/TWS$'
+     register: homefolder
+     changed_when: false
+
+
+   - name: Secure home folders - mode 0750
+     file:
+      path: "{{ item }}"
+      mode: 0750
+     ignore_errors: yes
+     loop: "{{ homefolder.stdout_lines }}" 
+
+   
+   - name: Find path directories
+     shell: find $(echo $PATH | tr ':' ' ') -prune -type d \( -perm -002 -o -perm -020 \)
+     register: pathdir
+     changed_when: false
+
+   - name: Secure path directories - remove write from group/others 
+     file:
+      path: "{{ item }}"
+      mode: 'go-w'
+     loop: "{{ pathdir.stdout_lines }}"
+
+   - name: Search .profile files
+     shell: find $(cat /ansible/loffs | tr '\n' ' ') -xdev -name .profile -ls | awk '{print $11}'
+     ignore_errors: yes
+     register: profileout
+     changed_when: false
+
+   - name: Set root as .profile files owner
+     file:
+      path: "{{ item }}"
+      owner: root
+     loop: "{{ profileout.stdout_lines}}"
+
+      
+   - name: Secure /etc/group & /etc/passwd - mode root.security 0644
+     file: 
+      path: "{{ item }}" 
+      owner: root
+      group: security
+      mode: 0644
+     loop:
+       - /etc/group
+       - /etc/passwd
+
+ 
+   - name: Secure /etc/syslog.conf - mode root.system 0640
+     file:
+      path: /etc/syslog.conf
+      owner: root
+      group: system
+      mode: 0640
+ 
+
+   - name: Secure files under /audit & /etc/security/audit - mode root.audit 0640
+     file:
+      path: "{{ item }}"
+      owner: root
+      group: audit
+      recurse: yes
+      mode: 0640
+     loop: 
+       - /etc/security/audit
+       - /audit
+
+
+   - name: Secure /audit & /etc/security/audit - mode root.audit 0750
+     file:
+      path: "{{ item }}" 
+      owner: root
+      group: audit
+      mode: 0750
+     loop:
+       - /etc/security/audit
+       - /audit
+
+
+   - name: Secure crontab directory - mode .cron 0770
+     file:
+      path: /var/spool/cron/crontabs 
+      group: cron
+      mode: 0770
+
+      
+   - name: Secure crontab files - mode o-rwx
+     file:
+      path: /var/spool/cron/crontabs
+      group: cron
+      recurse: yes
+      mode: "o-rwx" 
+
+
+   - name: Disable Remote Services - mode ugo-rwx
+     # rsh had to be set apart since it didn't work with the file module
+     file:
+      path: "{{ item }}"
+      mode: '0000' 
+     loop:
+       - /usr/bin/rcp 
+       - /usr/bin/rlogin
+       - /usr/sbin/rlogind
+       - /usr/sbin/rshd
+       - /usr/sbin/tftpd
+
+
+   - name: Check rsh permissions
+     shell: ls -ld /usr/bin/rsh | awk '{print $1}' | grep -E 'r|w|x'
+     register: rsh
+     ignore_errors: yes
+     changed_when: false
+
+   - name: Disable rsh - mode ugo-rwx
+     command: chmod ugo= /usr/bin/rsh
+     args:
+       warn: no
+     when: "rsh.rc == 0"
+
+
+   - name: Configure sendmail greeting
+     lineinfile:
+      path: /etc/mail/sendmail.cf
+      regexp: '^(O\sSmtpGreetingMessage\=)\$j\sSendmail\s\$b'
+      line: '\g<1>mailerready'
+      backup: yes
+      backrefs: yes
+
+
+   - name: Secure /etc/mail/sendmail.cf - mode 640
+     file:
+      path: /etc/mail/sendmail.cf
+      owner: root
+      group: system
+      mode: '0640'
+
+
+   - name: Secure /var/spool/mqueue - mode 700
+     file:
+      path: /var/spool/mqueue
+      owner: root
+      group: system
+      mode: '0700'
+
+
+   - name: Check tcp/ip parameters
+     shell: no -x {{ item.setting }} | awk -F, '{print $2}' | grep {{ item.value }}
+     register: noutput
+     loop: "{{ tcpip }}"
+     changed_when: false
+     ignore_errors: yes
+
+   - name: Harden tcp/ip parameters
+     command: "no -p -o {{ item.item.setting }}={{ item.item.value }}"
+     loop: "{{ noutput.results }}"
+     when: "item.rc != 0"
+     loop_control:
+       label: "{{ item.item.setting }}"
+
+
+   - name: Check tcp/ip parameters - nfs
+     shell: nfso -x {{ item.setting }} | awk -F, '{print $2}' | grep {{ item.value }}
+     register: nfsoutput
+     loop: "{{ nfso }}"
+     changed_when: false
+     ignore_errors: yes
+
+   - name: Harden tcp/ip parameters - nfs
+     command: "nfso -p -o {{ item.item.setting }}={{item.item.value}}"
+     loop: "{{ nfsoutput.results }}"
+     when: "item.rc != 0"
+     loop_control:
+       label: "{{ item.item.setting }}"
+
+
+   - name: Secure SNMP Configuration
+     replace: 
+      path: /etc/snmpd.conf
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.line }}" 
+      backup: yes
+     loop:
+       - { regexp: '^community(.+)public', line: '#community      public' }
+       - { regexp: '^community(.+)private', line: '#community      private' }
+       - { regexp: '^community(.+)system', line: '#community      system' }
+       - { regexp: '(?P<comm>^community\s*\w*\s\b(?:\d{1,3}\.){3}\d{1,3}\b\s\b(?:\d{1,3}\.){3}\d{1,3}\b)\s(?P<rw>readWrite)', line: '\g<comm>      readOnly' }
+
+
+   - name: Secure /etc/profile - disable talk/write commands
+     lineinfile:
+      path: /etc/profile
+      regexp: '^mesg n(\s.*)$'
+      line: 'mesg n'
+      backup: yes
+
+ 
+   - name: Secure /etc/profile - disable coredumps
+     lineinfile:
+      path: /etc/profile
+      line: ulimit -c 0 
+
+
+   - name: Remove guest account
+     user:
+      name: guest
+      state: absent
+      remove: yes
+
+
+   - name: Set passwd attribs
+     replace:
+       path: /etc/security/user
+       regexp: "{{ item.regexp }}"
+       replace: "{{ item.line }}"
+       backup: yes
+     loop:
+        - { regexp: '(\tmindiff = )[0-3]', line: '\g<1>4' }
+        - { regexp: '(\tmaxexpired = )-1', line: '\g<1>2' }
+        - { regexp: '(\tminloweralpha = )0', line: '\g<1>1' }
+        - { regexp: '(\tminupperalpha = )0', line: '\g<1>1' }
+        - { regexp: '(\tmindigit = )0', line: '\g<1>1' }
+        - { regexp: '(\tminspecialchar = )0', line: '\g<1>1' }
+        - { regexp: '(\tminage = )0', line: '\g<1>1' }
+        - { regexp: '(\tminalpha = )[0-1]', line: '\g<1>2' }
+        - { regexp: '(\tminother = )[0-1]', line: '\g<1>2' }
+        - { regexp: '(\tmaxrepeats = ).*$', line: '\g<1>2' }
+        - { regexp: '(\thistexpire = )(.*)$', line: '\g<1>13' }
+        - { regexp: '(\thistsize = )(.*)$', line: '\g<1>20' }
+        - { regexp: '(\tloginretries = )(.*)$', line: '\g<1>3' }
+        - { regexp: '(\tmaxage = )(.*)$', line: '\g<1>12' }
+        - { regexp: '(\tminlen = )(.*)$', line: '\g<1>12' }
+
+
+   - name: Check if admin accounts exist
+     command: lsuser "{{ item.usr }}"
+     register: lsusr
+     loop: "{{ id }}"
+     ignore_errors: yes
+     changed_when: false
+
+   - name: Set passwd attribs for admin accounts - maxage
+     command: chuser maxage=8 {{ item.item.usr }}
+     loop: "{{ lsusr.results }}"
+     when: item.rc == 0
+     loop_control: 
+      label: "{{ item.item.usr }}"
+
+   - name: Set passwd attribs for admin accounts - minlen
+     command: chuser minlen=15 {{ item.item.usr }}
+     loop: "{{ lsusr.results }}"
+     when: item.rc == 0
+     loop_control:
+      label: "{{ item.item.usr }}"
+
+
+   - name: Set login attribs
+     lineinfile:
+       path: /etc/security/login.cfg
+       regexp: "{{ item.regexp }}"
+       line: "{{ item.line }}"
+       backrefs: yes
+       backup: yes
+     loop:
+        - { regexp: '(\tlogininterval = )(.*)$', line: '\g<1>300' }
+        - { regexp: '(\tlogindisable = )(.*)$', line: '\g<1>10' }
+        - { regexp: '(\tloginreenable = )(.*)$', line: '\g<1>360' }
+        - { regexp: '(\tlogintimeout = )(.*)$', line: '\g<1>30' }
+        - { regexp: '(\tlogindelay = )(.*)$', line: '\g<1>10' }
+        - { regexp: '(\therald = ).*$', line: '\g<1>"SSE Authorised Access Only!\\n\\nLogin:"' }
+
+
+   - name: Set encryption algorithm - ssha256
+     lineinfile:
+       path: /etc/security/login.cfg
+       regexp: '(\tpwd_algorithm = )(.*)$'
+       line: '\g<1>ssha256'
+       backrefs: yes
+       backup: yes
+
+
+   - name: Remove services from inetd.conf
+     replace:
+       path: /etc/inetd.conf
+       regexp: '(^(\w.+)$|^(\s*\w.+)$)'
+       replace: '# \g<1>'
+       backup: yes
+
+
+   - name: Disable daemons from /etc/rc.tcpip
+     lineinfile:
+       path: /etc/rc.tcpip
+       regexp: "{{ item.regexp }}" 
+       line: "{{ item.line }}" 
+       backrefs: yes
+       backup: yes
+     loop:
+        - {regexp: '^start /usr/sbin/inetd(.*)$' ,line: '#start /usr/sbin/inetd \g<1>'}
+        - {regexp: '^start /usr/lib/sendmail(.*)$' ,line: '#start /usr/lib/sendmail \g<1>'}
+        - {regexp: '^start /usr/sbin/snmpd(.*)$' ,line: '#start /usr/sbin/snmpd \g<1>'}
+        - {regexp: '^start /usr/sbin/dhcprd(.*)$' ,line: '#start /usr/sbin/dhcprd \g<1>'}
+        - {regexp: '^start /usr/sbin/dhcpcd(.*)$' ,line: '#start /usr/sbin/dhcpcd \g<1>'}
+        - {regexp: '^start /usr/sbin/dhcpsd(.*)$' ,line: '#start /usr/sbin/dhcpsd \g<1>'}
+        - {regexp: '^start /usr/sbin/autoconf6(.*)$' ,line: '#start /usr/sbin/autoconf6 \g<1>'}
+        - {regexp: '^start /usr/sbin/gated(.*)$' ,line: '#start /usr/sbin/gated \g<1>'}
+        - {regexp: '^start /usr/sbin/mrouted(.*)$' ,line: '#start /usr/sbin/mrouted \g<1>'}
+        - {regexp: '^start /usr/sbin/named(.*)$' ,line: '#start /usr/sbin/named \g<1>'}
+        - {regexp: '^start /usr/sbin/routed(.*)$' ,line: '#start /usr/sbin/routed \g<1>'}
+        - {regexp: '^start /usr/sbin/rwhod(.*)$' ,line: '#start /usr/sbin/rwhod \g<1>'}
+        - {regexp: '^start /usr/sbin/timed(.*)$' ,line: '#start /usr/sbin/timed \g<1>'}
+        - {regexp: '^start /usr/sbin/dpid2(.*)$' ,line: '#start /usr/sbin/dpid2 \g<1>'}
+        - {regexp: '^start /usr/sbin/hostmibd(.*)$' ,line: '#start /usr/sbin/hostmibd \g<1>'}
+        - {regexp: '^start /usr/sbin/snmpmibd(.*)$' ,line: '#start /usr/sbin/snmpmibd \g<1>'}
+        - {regexp: '^start /usr/sbin/aixmibd(.*)$' ,line: '#start /usr/sbin/aixmibd \g<1>'}
+        - {regexp: '^start /usr/sbin/ndpd-host(.*)$' ,line: '#start /usr/sbin/ndpd-host \g<1>'}
+        - {regexp: '^start /usr/sbin/ndpd-router(.*)$' ,line: '#start /usr/sbin/ndpd-router \g<1>'}
+        
+
+   - name: Check daemons enabled on innitab
+     command: lsitab {{ item }}
+     loop:
+       - writesrv
+       - i4ls
+       - pmd
+       - httpdlite
+       - rcns
+       - qdaemon
+       - lpd
+       - piobe
+       - dt
+     register: lsitab
+     ignore_errors: yes
+     changed_when: false
+
+   - name: Remove daemons from inittab 
+     command: rmitab {{ item.item }}
+     loop: "{{ lsitab.results }}"
+     when: item.rc == 0
+     loop_control:
+      label: "{{ item.item }}"
+
+
+   - name: Check nfsd services
+     shell: lssrc -s nfsd | grep inoperative
+     register: nfsd
+     ignore_errors: yes
+     changed_when: false
+
+   - name: Check portmap services
+     shell: grep "^start /usr/sbin/portmap" /etc/rc.tcpip
+     register: portmap
+     ignore_errors: yes
+     changed_when: false
+
+   - name: Disable portmap when nfsd is not active
+     command: chrctcp -d portmap
+     when: portmap.rc == 0 and nfsd.rc == 0
+
+
+   - name: Check core dumps
+     command: lssec -f /etc/security/limits -s default -a core -a core_hard
+     register: core
+     changed_when: false
+
+   - name: Disable core dumps
+     command: chsec -f /etc/security/limits -s default -a core=0 -a core_hard=0
+     when: "core.stdout != 'default core=0 core_hard=0'"
+
+
+   - name: Check full core
+     command: lsattr -El sys0 -a fullcore
+     register: full
+     changed_when: false
+
+   - name: Disable full core
+     command: chdev -l sys0 -a fullcore=false
+     when: "full.stdout != 'fullcore false Enable full CORE dump True'"
+
+- name: Run Exceptions Approved on the following hosts
+  hosts: excplist
+  gather_facts: false
+  roles:
+     - maxage
+     - minlen
+     - inetd

@@ -1,0 +1,18 @@
+---
+- name: Remove Packages
+  hosts: lnxsse
+  gather_facts: false
+  tasks:
+
+   - name: Remove the following packages
+     yum:
+       name: "{{item}}"
+       state: absent
+     loop: 
+        - talk
+        - rsh
+        - ypbind
+        - telnet
+        - openldap-clients
+        
+  

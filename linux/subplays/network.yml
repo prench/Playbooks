@@ -1,0 +1,33 @@
+---
+- name: Configure network parameters
+  hosts: lnxsse
+  tasks:
+   
+   - name: Configure followin settings
+     sysctl:
+       name: "{{item.setting}}"
+       value: "{{item.use}}"
+       sysctl_set: yes
+       state: present
+       reload: yes
+     loop: 
+        - { setting: 'net.ipv4.ip_forward', use: '0' }
+        - { setting: 'net.ipv4.conf.all.send_redirects' , use: '0' }
+        - { setting: 'net.ipv4.conf.default.send_redirects' , use: '0' }
+        - { setting: 'net.ipv4.conf.all.accept_source_route' , use: '0' }
+        - { setting: 'net.ipv4.conf.default.accept_source_route' , use: '0' }
+        - { setting: 'net.ipv4.conf.all.accept_redirects' , use: '0' }
+        - { setting: 'net.ipv4.conf.default.accept_redirects' , use: '0' }
+        - { setting: 'net.ipv4.conf.all.secure_redirects' , use: '0' }
+        - { setting: 'net.ipv4.conf.default.secure_redirects' , use: '0' }
+        - { setting: 'net.ipv4.conf.all.log_martians' , use: '1' }
+        - { setting: 'net.ipv4.conf.default.log_martians' , use: '1' }
+        - { setting: 'net.ipv4.icmp_echo_ignore_broadcasts' , use: '1' }
+        - { setting: 'net.ipv4.icmp_ignore_bogus_error_responses' , use: '1' }
+        - { setting: 'net.ipv4.conf.all.rp_filter' , use: '1' }
+        - { setting: 'net.ipv4.conf.default.rp_filter' , use: '1' }
+        - { setting: 'net.ipv4.tcp_syncookies' , use: '1' }
+        - { setting: 'net.ipv6.conf.all.accept_ra' , use: '0' }
+        - { setting: 'net.ipv6.conf.default.accept_ra ' , use: '0' }
+        - { setting: 'net.ipv6.conf.all.accept_redirects' , use: '0' }
+        - { setting: 'net.ipv6.conf.default.accept_redirects' , use: '0' }

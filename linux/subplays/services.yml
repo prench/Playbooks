@@ -1,20 +1,68 @@
 ---
-- name: Enable services
+# Enable and disable services based on CIS Standard
+- name: Enable/Disable and Configure permissions on services
   hosts: lnxsse
   gather_facts: false
   tasks:
 
    - name: Enable and start cron
-     service: 
-       name: crond
-       state: started
-       enabled: yes 
+     service:
+      name: crond
+      state: started
+      enabled: yes
 
-   - name: Disable services 
-     service: 
-       name: "{{item}}"
-       state: stopped
-       enabled: no
+   - name: Configure permisions on crontab
+     file:
+      path: /etc/crontab
+      owner: root
+      group: root
+      mode: "og-rwx"
+
+   - name: Configure permisions on cron.hourly
+     file:
+      path: "{{item}}"
+      owner: root
+      group: root
+      mode: "og-rwx"
+     loop:
+       - /etc/cron.hourly
+       - /etc/cron.daily
+       - /etc/cron.weekly
+       - /etc/cron.monthly
+
+   - name: Delete cron.deny and at.deny
+     file:
+      path: "{{item}}"
+      state: absent
+     loop:
+       - /etc/at.deny
+       - /etc/cron.deny
+
+   - name: Remove non allowed users from cron.allow
+     lineinfile:
+      path: /etc/cron.allow
+      regexp: '^(?!root|metron)'
+      state: absent
+      backup: yes
+
+   - name: Confirm root/metron in cron.allow
+     lineinfile:
+      path: /etc/cron.allow
+      line: "{{item}}"
+      state: present
+      create: yes
+      owner: root
+      group: root
+      mode: '0600'
+     loop:
+       - root
+       - metron
+
+   - name: Disable services
+     service:
+      name: "{{item}}"
+      state: stopped
+      enabled: no
      loop:
         - xinetd
         - avahi-daemon

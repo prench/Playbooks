@@ -1,0 +1,76 @@
+---
+- name: Configure system file permissions
+  hosts: lnxsse
+  tasks:
+
+   - name: Configure permissions on /etc/passwd
+     file:
+      path: /etc/passwd
+      owner: root
+      group: root
+      mode: '0644'
+
+   - name: Configure permissions on /etc/shadow
+     file:
+      path: /etc/shadow
+      owner: root
+      group: root
+      mode: '0000'
+
+   - name: Configure permissions on /etc/group
+     file:
+      path: /etc/group
+      owner: root
+      group: root
+      mode: '0644'
+
+   - name: Configure permissions on /etc/gshadow
+     file:
+      path: /etc/gshadow
+      owner: root
+      group: root
+      mode: '0000'
+
+   - name: Configure permissions on /etc/passwd-
+     file:
+      path: /etc/passwd-
+      owner: root
+      group: root
+      mode: '0600'
+
+   - name: Configure permissions on /etc/group-
+     file:
+      path: /etc/group-
+      owner: root
+      group: root
+      mode: '0600'
+
+   - name: Configure permissions on /etc/gshadow-
+     file:
+      path: /etc/gshadow-
+      owner: root
+      group: root
+      mode: '0000'
+
+   - name: Remove legacy + entries
+     replace:
+      path: "{{item}}"
+      regexp: '(^\+.*$)'
+      replace: '#\g<1>'
+      backup: yes
+     loop:
+       - /etc/passwd
+       - /etc/shadow
+       - /etc/group
+
+   - name: Check UID 0 which is not root
+     shell: "cat /etc/passwd | awk -F: '($3 == 0) { print $1 }' | grep -v root"
+     register: uid0
+     ignore_errors: true
+     changed_when: false
+
+   - name: Lock account with UID 0 which is not root
+     user:
+      name: "{{item}}"
+      password_lock: yes
+     loop: "{{uid0.stdout_lines }}"

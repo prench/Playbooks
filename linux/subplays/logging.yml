@@ -1,0 +1,38 @@
+---
+- name: Configure logging
+  hosts: lnxsse
+  tasks:
+
+  - name: Enable and start rsyslog
+    service:
+      name: rsyslog
+      state: started
+      enabled: yes
+
+  - name: Copy rsyslog config file template
+    template:
+      src: /repo/syslog/linux/rsyslog.j2
+      dest: /etc/rsyslog.conf
+      owner: root
+      group: root
+      mode: 0640
+      backup: yes
+    notify:
+      - restart rsyslog
+
+  - name: Permissions on log files
+    shell: find /var/log -type f -ls | awk '{print $11}'
+    register: logfiles
+
+  - name: Remove permission from log files
+    file:
+      path: "{{ item }}"
+      mode: o-rwx,g-wx
+    loop: "{{ logfiles.stdout_lines }}"
+    ignore_errors: yes
+
+  handlers:
+  - name: restart rsyslog
+    service:
+      name: rsyslog
+      state: restarted

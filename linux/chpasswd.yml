@@ -1,0 +1,54 @@
+---
+- name: Playbook to change passwords on the linux platform
+  hosts: emasesalnx
+  gather_facts: false
+  vars:
+   date: "{{ lookup('pipe', 'date +%Y%m%d%H%M') }}"
+  tasks:
+
+    - name: Backup shadow file
+      copy:
+       src: /etc/shadow
+       dest: /etc/shadow.{{ date }}
+       remote_src: yes
+
+
+- name: Update password on the dev environment
+  hosts: emrdev
+  gather_facts: false
+  vars_files:
+    - /etc/ansible/inventory/vars/vaultpasswd.yml
+  tasks:
+
+    - name: Update root password | DEV
+      user:
+        name: root
+        password: "{{ vault_rootpwd_dev }}"
+        update_password: always
+
+
+- name: Update password on the test environment
+  hosts: emrtest
+  gather_facts: false
+  vars_files:
+    - /etc/ansible/inventory/vars/vaultpasswd.yml
+  tasks:
+
+    - name: Update root password | TEST
+      user:
+        name: root
+        password: "{{ vault_rootpwd_test }}"
+        update_password: always
+
+- name: Update password on the prod environment
+  hosts: emrprod
+  gather_facts: false
+  vars_files:
+    - /etc/ansible/inventory/vars/vaultpasswd.yml
+  tasks:
+
+    - name: Update root password | PROD
+      user:
+        name: root
+        password: "{{ vault_rootpwd_prod }}"
+        update_password: always

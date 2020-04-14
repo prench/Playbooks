@@ -1,0 +1,64 @@
+---
+- name: Create users
+  hosts: emasesaix
+  gather_facts: false
+  vars_files:
+   - /etc/ansible/inventory/vars/users.yml
+  vars:
+   date: "{{ lookup('pipe', 'date +%Y%m%d%H%M') }}"
+
+  tasks:
+
+    - name: Backup passwd file
+      copy:
+       src: /etc/passwd
+       dest: /etc/passwd.{{ date }}
+       remote_src: yes
+
+    - name: Backup security file
+      copy:
+       src: /etc/security/passwd
+       dest: /etc/security/passwd.{{ date }}
+       remote_src: yes
+
+    - name: Copy sudo software
+      copy:
+       src: /etc/ansible/repo/AIX/sudo/sudo-1.8.31-2.aix61.rpm
+       dest: /tmp/sudo-1.8.31-2.aix61.rpm
+
+    - name: Install rpm package
+      shell:
+       rpm -Uh --force /tmp/sudo-1.8.31-2.aix61.rpm
+
+    - name: Copy sudoers file general template
+      copy:
+       src: /etc/ansible/repo/AIX/sudo/templates/sudoers
+       dest: /etc/sudoers
+       mode: 0440
+       validate: /usr/sbin/visudo -cf %s
+       backup: yes
+
+    - name: Copy sap sudoers file
+      copy:
+       src: /etc/ansible/repo/AIX/sudo/templates/sap
+       dest: /etc/sudoers.d
+       mode: 0440
+       validate: /usr/sbin/visudo -cf %s
+       backup: yes
+      when: sap_node is defined
+
+    - name: Create users on AIX
+      user:
+        name: "{{ item.name }}"
+        uid: "{{ item.uid }}"
+        group: "{{ item.group }}"
+        comment: "{{ item.gecos }}"
+        shell: /usr/bin/ksh
+        home: /home/{{ item.name }}
+        update_password: on_create
+        password: 2m8Tg8ByFYKj6
+      loop: "{{ id }}"
+
+    - name: Force user to change password
+      command: "pwdadm -f ADMCHG {{ item.name }}"
+      loop: "{{ id }}"

@@ -1,0 +1,15 @@
+---
+- name: Install VMware tools
+  hosts: emasesalnx
+  gather_facts: false
+  tasks:
+
+
+    - name: Upgrade VMware Tools using name
+      vmware_guest_tools_upgrade:
+       hostname: pd0003.emasesa.com
+       username: eapreciados@emasesa.com
+       password: xxxxxxxxx
+       datacenter: EMASESA
+       name: tb0019
+      delegate_to: localhost

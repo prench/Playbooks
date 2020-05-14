@@ -1,0 +1,16 @@
+---
+- name: Change VM State
+  hosts: emasesalnx
+  gather_facts: false
+  tasks:
+
+
+    - name: Power Off VM
+      vmware_guest:
+       hostname: pd0003.emasesa.com
+       username: eapreciados@emasesa.com
+       password: xxxxxxxxx
+       validate_certs: no
+       name: db0094
+       state: poweredoff
+      delegate_to: localhost

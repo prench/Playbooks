@@ -1,0 +1,16 @@
+---
+- name: Change VM State
+  hosts: emasesalnx
+  gather_facts: false
+  tasks:
+
+
+    - name: Power On VM
+      vmware_guest:
+       hostname: pd0003.emasesa.com
+       username: eapreciados@emasesa.com
+       password: xxxxxxxx
+       validate_certs: no
+       name: db0094
+       state: poweredon
+      delegate_to: localhost

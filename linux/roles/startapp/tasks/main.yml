@@ -1,0 +1,4 @@
+---
+   - name: start app
+     command: /opt/scripts/startapp.sh
+     when: startapp is defined

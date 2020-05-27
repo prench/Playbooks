@@ -1,0 +1,6 @@
+---
+   - name: confirm httpd service is started
+     systemd:
+      state: started
+      name: httpd
+     when: httpd is defined

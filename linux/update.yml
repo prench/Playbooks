@@ -35,3 +35,18 @@
    - name: reboot time
      debug:
        msg: "The system rebooted in {{ reboot_result.elapsed }} seconds."
+       
+- name: Start up application
+  hosts: emasesalnx
+  gather_facts: false
+  roles:
+     - startapp
+     - httpd24httpd
+     - httpd24
+     - httpd
+     - ssmc
+     - eap7
+     - jboss
+     - jbosseap7
+     - zabbix
+

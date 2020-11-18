@@ -1,0 +1,22 @@
+---
+# This playbook is inetented to be used when there is just one path (vscsi) that has failed
+- name: Reconfigure paths
+  hosts: all
+  gather_facts: false
+  tasks:
+
+   - name: Get failed paths
+     shell: lspath | grep -i fail | awk '{ print $2}'
+     register: hdisk
+
+   - name: Get failed vscsi
+     shell: lspath | grep -i fail | awk '{ print $3}' | uniq
+     register: vscsi
+
+   - name: Remove hdisk
+     shell: rmpath -l {{ item }} -p {{ vscsi.stdout }}
+     register: lspath
+     loop: "{{ hdisk.stdout_lines }}"
+
+   - name: Rescan disks
+     shell: cfgmgr

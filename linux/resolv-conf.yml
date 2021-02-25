@@ -1,0 +1,24 @@
+---
+# Playbook to fix https://access.redhat.com/solutions/61921
+- name: Set options in resolv.conf
+  hosts: emasesalnx
+  handlers:
+   - name: restart NetworkManager
+     service:
+       name: NetworkManager
+       state: restarted
+
+  tasks:
+   - name: Create dispatcher script.
+     template:
+       src: /etc/ansible/repo/linux/resolv/15-resolv.j2
+       dest: /etc/NetworkManager/dispatcher.d/15-resolv
+       owner: root
+       group: root
+       mode: 0755
+
+   - name: Create resolv.conf.custom.
+     template:
+       src: /etc/ansible/repo/linux/resolv/resolv.conf.custom.j2
+       dest: /etc/resolv.conf.custom
+     notify: restart NetworkManager

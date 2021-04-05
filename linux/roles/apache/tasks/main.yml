@@ -1,0 +1,39 @@
+---
+# Include variables 
+#
+#
+- name: check httpd version.
+  command: ls -l /usr/sbin/httpd
+  ignore_errors: true
+  changed_when: false
+  register: _httpd
+
+- name: Include httpd variables
+  include_vars: httpd.yml
+  when: "_httpd.rc == 0"
+
+
+- name: check httpd24-httpd version.
+  command: ls -l /opt/rh/httpd24/root/sbin/httpd
+  ignore_errors: true
+  changed_when: false
+  register: _httpd24httpd
+
+- name: Include httpd24-httpd variables
+  include_vars: httpd24-httpd.yml
+  when: "_httpd24httpd.rc == 0"
+
+# Configure Apache.
+- name: Include Template tasks
+  include_tasks: "distribute-template.yml"
+
+- name: Include Configure tasks
+  include_tasks: "configure-apache.yml"
+
+
+- name: Ensure Apache has selected state and enabled on boot.
+  service:
+    name: "{{ apache_service }}"
+    state: "{{ apache_state }}"
+    enabled: true
+

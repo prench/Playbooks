@@ -1,0 +1,10 @@
+---
+- name: Distribute Apache Template.
+  template:
+    src: "{{ apache_template_dir }}/{{ apache_template_file }}"
+    dest: "{{ apache_conf_path }}/{{ apache_daemon }}.conf" 
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  notify: restart apache

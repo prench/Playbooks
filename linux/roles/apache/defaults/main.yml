@@ -1,0 +1,55 @@
+---
+systemd_path: /usr/lib/systemd/system
+
+# Apache configuration
+apache_listen_port: 80
+apache_listen_port_ssl: 443
+apache_log_level: warn
+apache_server_admin: root@localhost
+apache_timeout: 60
+apache_charset: UTF-8
+apache_include_conf: conf.modules.d/*.conf
+apache_include_optional: conf.d/*.conf
+
+# Apache template
+apache_template_dir: /etc/ansible/repo/linux/apache
+apache_template_file: httpd.conf.j2
+# Comment out to configure website
+#apache_template_conf: aguasevilla_test
+
+# Set initial apache state. Recommended values: `started` or `stopped`
+apache_state: started
+
+
+# Set apache state when configuration changes are made. Recommended values:
+# `restarted` or `reloaded`
+apache_restart_state: restarted
+
+# General configuration Options
+apache_configuration_items:
+  - regexp: "^Listen "
+    line: "Listen {{ apache_listen_port }}"
+  - regexp: "^Timeout "
+    line: "Timeout {{ apache_timeout }}"
+  - regexp: "^LogLevel "
+    line: "LogLevel {{ apache_log_level }}"
+  - regexp: "^ServerAdmin "
+    line: "ServerAdmin {{ apache_server_admin }}"
+  - regexp: "^AddDefaultCharset "
+    line: "AddDefaultCharset {{ apache_charset }}"
+  - regexp: "^Include "
+    line: "Include {{ apache_include_conf }}"
+  - regexp: "^IncludeOptional "
+    line: "IncludeOptional {{ apache_include_optional }}"
+    
+
+# Load/Disable Apache modules
+apache_load_modules:
+  - regexp: "^LoadModule headers_module modules/mod_headers.so"
+    line: "LoadModule headers_module modules/mod_headers.so"
+  - regexp: "^LoadModule rewrite_module modules/mod_rewrite.so"
+    line: "LoadModule rewrite_module modules/mod_rewrite.so"
+  - regexp: "LoadModule autoindex_module modules/mod_autoindex.so"
+    line: "#LoadModule autoindex_module modules/mod_autoindex.so"
+  - regexp: "LoadModule include_module modules/mod_include.so"
+    line: "#LoadModule include_module modules/mod_include.so"

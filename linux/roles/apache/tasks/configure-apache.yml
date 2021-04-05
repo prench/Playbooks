@@ -1,0 +1,116 @@
+---
+- name: Configure Apache.
+  lineinfile:
+    dest: "{{ apache_conf_path }}/{{ apache_daemon }}.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    mode: 0644
+    backup: yes
+  loop: "{{ apache_configuration_items }}"
+  notify: restart apache
+
+- name: Enable/Disable Apache mods.
+  lineinfile:
+    dest: "{{ apache_conf_modules }}/00-base.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    mode: 0644
+    backup: yes
+  loop: "{{ apache_load_modules }}"
+  notify: restart apache
+
+
+- name: Create user ssii.
+  user:
+    name: ssii
+    uid: 2000
+    home: /home/ssii
+    shell: /bin/bash
+    group: apache
+    password: 2m8Tg8ByFYKj6
+
+# Configure Apache environment
+- name: Rename configuration files.
+  command: mv "{{ apache_confd_dir }}/{{ item }}" "{{ apache_confd_dir }}/{{ item }}.NOLOAD"
+  args: 
+    creates: "{{ apache_confd_dir }}/{{ item }}.NOLOAD"
+  loop:
+    - userdir.conf
+    - autoindex.conf
+    - welcome.conf
+
+- name: Distribute Configuration files Template.
+  template:
+    src: "{{ apache_template_dir }}/template.conf.j2"
+    dest: "{{ apache_confd_dir }}/{{ apache_template_conf }}.conf"
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  when: apache_template_conf is defined
+  notify: restart apache
+
+
+- name: Configure permissions on {{ apache_template_conf }} subdirs.
+  file: 
+    path: "{{ apache_document_root }}/{{ apache_template_conf }}"
+    group: apache
+    recurse: yes
+    mode: o-rwx
+  when: apache_template_conf is defined
+  ignore_errors: true
+
+
+- name: Configure permissions on {{ apache_template_conf }}.
+  file:
+    path: "{{ apache_document_root }}/{{ apache_template_conf }}"
+    owner: ssii
+    group: apache
+    mode: '0770'
+  when: apache_template_conf is defined
+  ignore_errors: true
+
+
+- name: Configure permissions on {{ apache_template_conf }} wp-content/uploads.
+  file:
+    path: "{{ apache_document_root }}/{{ apache_template_conf }}/wp-content/uploads"
+    owner: apache
+    group: apache
+    mode: '0770'
+  when: apache_template_conf is defined
+  ignore_errors: true
+
+- name: Find files with owner different than ssii/apache.
+  shell: >
+    find "{{ apache_document_root }}/{{ apache_template_conf }}"
+    -type f ! \( -user apache -o -user ssii \) -ls | awk '{print $11}'
+  register: apachefiles
+  when: apache_template_conf is defined
+  changed_when: false
+
+- name: Set files as apache owner.
+  file: 
+    path: "{{ item }}"
+    owner: apache
+  when: apache_template_conf is defined
+  loop: "{{ apachefiles.stdout_lines}}"
+
+
+- name: Set umask for {{ apache_service }} service.
+  lineinfile:
+    path: "{{ systemd_path }}/{{apache_service}}.service"
+    insertafter: 'Service'
+    line: UMask=0002
+    backup: yes
+  notify: restart apache
+
+- name: Set umask for php-fpm service.
+  lineinfile:
+    path: "{{ systemd_path }}/php-fpm.service"
+    insertafter: 'Service'
+    line: UMask=0002
+    backup: yes
+  notify: restart php-fpm
+  ignore_errors: yes

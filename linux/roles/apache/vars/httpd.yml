@@ -1,0 +1,12 @@
+---
+apache_service: httpd
+apache_daemon: httpd
+apache_daemon_path: /usr/sbin/
+apache_server_root: /etc/httpd
+apache_cgi_path: /var/www/cgi-bin
+apache_document_www: /var/www
+apache_document_root: /var/www/html
+apache_conf_path: /etc/httpd/conf
+apache_confd_dir: /etc/httpd/conf.d
+apache_conf_modules: /etc/httpd/conf.modules.d
+php_path: /etc

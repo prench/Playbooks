@@ -1,0 +1,12 @@
+---
+apache_service: httpd24-httpd
+apache_daemon: httpd
+apache_daemon_path: /opt/rh/httpd24/root/usr/sbin/
+apache_server_root: /opt/rh/httpd24/root/etc/httpd
+apache_cgi_path: /opt/rh/httpd24/root/var/www/cgi-bin
+apache_document_www: /opt/rh/httpd24/root/var/www
+apache_document_root: /opt/rh/httpd24/root/var/www/html
+apache_conf_path: /opt/rh/httpd24/root/etc/httpd/conf
+apache_confd_dir: /opt/rh/httpd24/root/etc/httpd/conf.d
+apache_conf_modules: /opt/rh/httpd24/root/etc/httpd/conf.modules.d
+php_path: /etc/opt/rh/rh-php56

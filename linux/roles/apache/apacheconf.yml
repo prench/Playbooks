@@ -1,0 +1,46 @@
+---
+- name: Standardize Apache Configuration.
+  hosts: emasesalnx
+  vars_files: 
+    - /etc/ansible/playbooks/linux/roles/apache/defaults/main.yml
+
+  handlers:
+    - name: restart apache
+      service:
+        name: "{{ apache_service }}"
+        state: "{{ apache_restart_state }}"
+
+    - name: restart php-fpm
+      service:
+        name: php-fpm
+        state: restarted
+        daemon_reload: yes
+
+  tasks:
+# Include variables
+#
+#
+    - name: check httpd version.
+      command: ls -l /usr/sbin/httpd
+      ignore_errors: true
+      changed_when: false
+      register: _httpd
+
+    - name: Include httpd variables.
+      include_vars: /etc/ansible/playbooks/linux/roles/apache/vars/httpd.yml
+      when: "_httpd.rc == 0"
+
+
+    - name: check httpd24-httpd version.
+      command: ls -l /opt/rh/httpd24/root/sbin/httpd
+      ignore_errors: true
+      changed_when: false
+      register: _httpd24httpd
+
+    - name: Include httpd24-httpd variables.
+      include_vars: /etc/ansible/playbooks/linux/roles/apache/vars/httpd24-httpd.yml
+      when: "_httpd24httpd.rc == 0"
+
+
+    - name: Include apache configure.
+      include_tasks: "/etc/ansible/playbooks/linux/roles/apache/tasks/configure-apache.yml"

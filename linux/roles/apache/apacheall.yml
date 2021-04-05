@@ -1,0 +1,5 @@
+---
+- name: Distribute and Standardize Apache Configuration.
+  hosts: emasesalnx
+  roles:
+   - apache

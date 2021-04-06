@@ -1,4 +1,4 @@
-apacheall.yml
+# apacheall.yml
 
 A la hora de configurar el servicio apache en un servidor nuevo, hay que ejecutar el siguiente playbook apacheall.yml que está localizado en la ruta /etc/ansible/playbooks/linux
 Nota: Este playbook no instala el servicio solo lo configura
@@ -8,6 +8,7 @@ De manera resumida, lo que hace es copiar el template del fichero de configuraci
 
 El rol de apache se encuentra bajo /etc/ansible/playbooks/linux/roles y están definidos los siguientes directorios:
 Roles
+
    |-- tasks
 -	main.yml: 
 •	comprueba que variables hay que cargar dependiendo del servicio de apache que esté instalado en la maquina (httpd/httpd24-httpd)
@@ -63,7 +64,7 @@ a.	Importante: Ejecutar ansible-playbook apacheconf.yml -l <servername> (este pl
 
 
 
-apacheconf.yml
+# apacheconf.yml
 
 Se puede utilizar este playbook para configurar apache según los estándares de Emasesa.
 Este playbook solo cambia los valores definidos en ./ apache/defaults/main.yml en el fichero de configuración de apache y modifica el fichero de configuración de websites si está definido y descomentado en ./ apache/defaults/main.yml

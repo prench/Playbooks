@@ -11,29 +11,46 @@ Roles
 
    |-- tasks
 -	main.yml: 
+
 •	comprueba que variables hay que cargar dependiendo del servicio de apache que esté instalado en la maquina (httpd/httpd24-httpd)
+
 •	lanza la tarea distribute-template.yml
+
 •	lanza la tarea configure-apache.yml
 •	activa el servicio apache
 
+
 -	distribute-template.yml
+
 •	copia el fichero de configuración de apache basado en el template que está alojado en el repositorio /etc/ansible/repo/linux/apache 
 
+
 -	configure-apache.yml
+
 •	configura distintos parámetros del fichero de configuración de apache basado en las variables definidas en ./defaults/main.yml y establece los permisos del fichero
+
 •	habilita/deshabilita módulos de apache basado en las variables definidas en ./defaults/main.yml y establece los permisos del fichero
+
 •	crea el usuario ssii con id 2000 y grupo apache
+
 •	renombra los ficheros de configuración (userdir.conf autoindex.conf welcome.conf) a .NOLOAD
+
 •	distribuye el fichero de configuración del website si la variable apache_template_conf está definida en ./ apache/defaults/main.yml
-•	configura diferentes permisos en los directorios definidos en el fichero de configuración del website.
+
+•	configura diferentes permisos en los directorios definidos en el fichero de configuración del website
+
 •	Establece Umask 0002 para los servicios de apache y php-fpm
 
 
 |-- defaults
 -	main.yml: 
+
 •	Variables de configuración que aplican tanto a las instalaciones de httpd como httpd24-httpd
+
 •	Localización del template del fichero de configuración de apache (httpd.conf.j2)
+
 •	Identificación de los módulos que se habilitan/deshabilitan
+
 •	Estado del servicio de apache
 
 |-- vars:

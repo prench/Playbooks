@@ -1,0 +1,16 @@
+<Directory /opt/rh/httpd24/root/var/www/html/{{ apache_template_conf }}>
+        AllowOverride None
+
+        Options All FollowSymLinks -Indexes -Includes
+        Require all granted
+
+        <IfModule mod_rewrite.c>
+                RewriteEngine On
+                RewriteBase /{{ apache_template_conf }}/
+                RewriteRule ^index\.php$ - [L]
+                RewriteCond %{REQUEST_FILENAME} !-f
+                RewriteCond %{REQUEST_FILENAME} !-d
+                RewriteRule . /{{ apache_template_conf }}/index.php [L]
+        </IfModule>
+
+</Directory>

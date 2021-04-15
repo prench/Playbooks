@@ -53,3 +53,10 @@ apache_load_modules:
     line: "#LoadModule autoindex_module modules/mod_autoindex.so"
   - regexp: "LoadModule include_module modules/mod_include.so"
     line: "#LoadModule include_module modules/mod_include.so"
+    
+    
+# Php configuration Options
+php_configuration_items:
+  - regexp: "^expose_php ="
+    line: "expose_php = Off"
+

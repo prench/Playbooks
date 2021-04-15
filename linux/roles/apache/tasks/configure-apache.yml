@@ -21,6 +21,21 @@
   loop: "{{ apache_load_modules }}"
   notify: restart apache
 
+- name: Check php.ini exists.
+  stat:
+    path: /etc/php.ini
+  register: php_result
+
+- name: Configure Php.
+  lineinfile:
+    dest: "{{ php_path }}/php.ini"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    backup: yes
+  loop: "{{ php_configuration_items }}"
+  notify: restart php-fpm
+  when: php_result.stat.exists
 
 - name: Create user ssii.
   user:

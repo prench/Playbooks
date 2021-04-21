@@ -1,0 +1,27 @@
+---
+- hosts: localhost
+  vars:
+    elements:
+         - db0061
+         - db0013
+  tasks:
+
+   - name: Get host info
+     local_action:
+       module: community.zabbix.zabbix_host_info
+       server_url: http://10.1.124.129/zabbix
+       login_user: Admin
+       login_password: Emasesa.2019
+       host_name: "{{ item }}"
+       host_ip: 10.1.125.197
+       timeout: 10
+       exact_match: no
+       remove_duplicate: yes
+     loop: "{{ elements }}"
+     register: zabbix_host
+
+   - ansible.builtin.debug:
+       msg: "host {{ item.hosts | map(attribute='name') }} tiene los templates {{ item.hosts | map(attribute='parentTemplates') | flatten | map(attribute='name') }}"
+     loop: "{{ zabbix_host.results }}"
+     loop_control:
+       label: "{{ item.hosts }}"

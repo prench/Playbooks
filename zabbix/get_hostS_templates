@@ -13,7 +13,6 @@
        login_user: Admin
        login_password: xxxxx
        host_name: "{{ item }}"
-       host_ip: 10.1.125.197
        timeout: 10
        exact_match: no
        remove_duplicate: yes

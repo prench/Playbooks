@@ -9,7 +9,6 @@
        login_user: Admin
        login_password: xxxxxxx
        host_name: db0061
-       host_ip: 10.1.125.197
        timeout: 10
        exact_match: no
        remove_duplicate: yes

@@ -23,4 +23,4 @@
        msg: "host {{ item.hosts | map(attribute='name') }} tiene los templates {{ item.hosts | map(attribute='parentTemplates') | flatten | map(attribute='name') }}"
      loop: "{{ zabbix_host.results }}"
      loop_control:
-       label: "{{ item.hosts }}"
+       label: " {{ item.hosts | map(attribute='name') }}"

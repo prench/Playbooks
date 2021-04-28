@@ -1,7 +1,7 @@
 ---
-# Update zabbix Agent
+# Update zabbix Agent for linux
 #
-- name: Enable zabbix repo
+- name: Update zabbix Agent
   hosts: emasesalnx
   handlers:
     - name: yum-clean
@@ -47,7 +47,7 @@
     - name: Force all notified handlers to run at this point.
       meta: flush_handlers
 
-    - name: Update Zabbix agent.
+    - name: Update Zabbix agent for linux.
       ansible.builtin.yum:
        name: zabbix-agent
        state: latest

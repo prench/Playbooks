@@ -1,0 +1,53 @@
+---
+# Update zabbix Agent
+#
+- name: Enable zabbix repo
+  hosts: emasesalnx
+  handlers:
+    - name: yum-clean
+      command: yum clean metadata
+      args:
+        warn: no
+  tasks:
+
+    - name: Remove old Zabbix repo.
+      ansible.builtin.yum_repository:
+       name: "{{ item }}"
+       file: emasesa
+       state: absent
+      loop:
+        - zabbix
+        - Zabbix
+      notify: yum-clean
+
+    - name: Enable zabbix repo to install v5 (RHEL8).
+      ansible.builtin.yum_repository:
+       name: Zabbix
+       description: zabbix
+       file: emasesa
+       baseurl: https://repo.zabbix.com/zabbix/5.0/rhel/8/x86_64
+       enabled: yes
+       gpgcheck: no
+       proxy: http://pb0029.emasesa.com:8080
+      when: ansible_distribution_major_version == "8"
+      notify: yum-clean
+
+    - name: Enable zabbix repo to install v5 (RHEL7).
+      ansible.builtin.yum_repository:
+       name: Zabbix
+       description: zabbix
+       file: emasesa
+       baseurl: https://repo.zabbix.com/zabbix/5.0/rhel/7/x86_64
+       enabled: yes
+       gpgcheck: no
+       proxy: http://pb0029.emasesa.com:8080
+      when: ansible_distribution_major_version == "7"
+      notify: yum-clean
+
+    - name: Force all notified handlers to run at this point.
+      meta: flush_handlers
+
+    - name: Update Zabbix agent.
+      ansible.builtin.yum:
+       name: zabbix-agent
+       state: latest

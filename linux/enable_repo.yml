@@ -1,0 +1,26 @@
+---
+- name: Enable repo
+  hosts: emasesalnx
+  tasks:
+
+
+    - name: Enable Panda mgmt repo
+      yum_repository:
+       name: management-agent
+       description: Panda Security - Management Agent Repository
+       baseurl: https://repository.pandasecurity.com/aether/installers/agent/linux/1.10.05.0002/default/rhel/default
+       enabled: yes
+       gpgcheck: yes
+       repo_gpgcheck: yes
+       gpgkey: https://repository.pandasecurity.com/aether/installers/agent/linux/1.10.05.0002/default/pandasecurity-gpg-public.asc
+       proxy: http://10.90.11.37:3128
+
+    - name: Enable Panda protection repo
+      yum_repository:
+       name: protection-agent
+       description: Panda Security - Protection Agent Repository
+       baseurl: https://repository.pandasecurity.com/aether/installers/protection/linux/2.00.06.0001/rhel/default
+       enabled: yes
+       gpgcheck: yes
+       repo_gpgcheck: yes
+       gpgkey: https://repository.pandasecurity.com/aether/installers/protection/linux/2.00.06.0001/pandasecurity-gpg-public.asc

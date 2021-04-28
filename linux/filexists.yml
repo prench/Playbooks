@@ -1,0 +1,11 @@
+---
+- hosts: DB0061
+  tasks:
+    - name: Check php.ini exists
+      stat:
+        path: /etc/php.ini
+      register: php_result
+
+    - name: Do task
+      command: ls -l /etc/php.ini
+      when: php_result.stat.exists

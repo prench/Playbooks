@@ -12,6 +12,7 @@ apache_include_conf: conf.modules.d/*.conf
 apache_include_optional: conf.d/*.conf
 
 # Apache template
+# Change the variable below to point to the right path of the templates
 apache_template_dir: /etc/ansible/repo/linux/apache
 apache_template_file: httpd.conf.j2
 # Comment out to configure website
